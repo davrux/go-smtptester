@@ -25,4 +25,4 @@ server_test.go
 examples/simple/main.go
 ~~~~
 
-for exmaple usage.
+for example usage.
