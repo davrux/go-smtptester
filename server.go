@@ -1,3 +1,11 @@
+// Package smtptester implements a simple SMTP server for testing. All
+// received mails are saved in a sync.Map with a key:
+//
+//      From+Recipient1+Recipient2
+//
+// Mails to the same sender and recipients will overwrite a previous
+// received mail, when the recipients slice has the same order as
+// in the mail received before.
 package smtptester
 
 import (
@@ -54,10 +62,10 @@ func (b *Backend) Add(m *Mail) {
 	b.Mails.Store(m.LookupKey(), m)
 }
 
-// Load loads mail with key from Mails. The ok result indicates
-// whether value was found in the map.
-func (b *Backend) Load(key string) (*Mail, bool) {
-	i, ok := b.Mails.Load(key)
+// Load loads mail from 'from' to recipients 'recipients'. The ok
+// result indicates whether value was found in the map.
+func (b *Backend) Load(from string, recipients []string) (*Mail, bool) {
+	i, ok := b.Mails.Load(LookupKey(from, recipients))
 	if !ok {
 		return nil, ok
 	}

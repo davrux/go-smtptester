@@ -42,7 +42,7 @@ func TestBackend_AddLoad(t *testing.T) {
 	}
 
 	b.Add(m)
-	m1, found := b.Load(m.LookupKey())
+	m1, found := b.Load(m.From, m.Recipients)
 	assert.True(t, found)
 	assert.Equal(t, m, m1)
 }
@@ -54,7 +54,7 @@ func TestSendMail(t *testing.T) {
 
 	assert.Nil(t, smtp.SendMail(srv.Addr, nil, from, recipients, bytes.NewBuffer(data)))
 
-	m, found := GetBackend(srv).Load(LookupKey(from, recipients))
+	m, found := GetBackend(srv).Load(from, recipients)
 	assert.True(t, found)
 	assert.Equal(t, from, m.From)
 	assert.Equal(t, recipients, m.Recipients)
