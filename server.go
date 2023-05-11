@@ -1,7 +1,7 @@
 // Package smtptester implements a simple SMTP server for testing. All
 // received mails are saved in a sync.Map with a key:
 //
-//      From+Recipient1+Recipient2
+//	From+Recipient1+Recipient2
 //
 // Mails to the same sender and recipients will overwrite a previous
 // received mail, when the recipients slice has the same order as
@@ -47,6 +47,11 @@ func NewBackend() *Backend {
 	return &Backend{Mails: sync.Map{}}
 }
 
+// NewSession returns a new Session.
+func (bkd *Backend) NewSession(_ *smtp.Conn) (smtp.Session, error) {
+	return newSession(bkd), nil
+}
+
 // GetBackend returns the concrete type *Backend from SMTP server.
 func GetBackend(s *smtp.Server) *Backend {
 	if s.Backend == nil {
@@ -73,16 +78,6 @@ func (b *Backend) Load(from string, recipients []string) (*Mail, bool) {
 	return i.(*Mail), ok
 }
 
-// Login implements Login interface.
-func (b *Backend) Login(state *smtp.ConnectionState, username, password string) (smtp.Session, error) {
-	return newSession(b), nil
-}
-
-// AnonymousLogin requires clients to authenticate using SMTP AUTH before sending emails
-func (b *Backend) AnonymousLogin(state *smtp.ConnectionState) (smtp.Session, error) {
-	return newSession(b), nil
-}
-
 ///////////////////////////////////////////////////////////////////////////
 // Session
 ///////////////////////////////////////////////////////////////////////////
@@ -100,8 +95,12 @@ func newSession(b *Backend) *Session {
 	}
 }
 
+func (s *Session) AuthPlain(username, password string) error {
+	return nil
+}
+
 // Mail implements the Mail interface.
-func (s *Session) Mail(from string, opts smtp.MailOptions) error {
+func (s *Session) Mail(from string, opts *smtp.MailOptions) error {
 	s.mail.From = from
 
 	return nil

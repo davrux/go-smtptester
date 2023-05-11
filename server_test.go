@@ -1,14 +1,15 @@
 package smtptester
 
 import (
-	"bytes"
 	"log"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/emersion/go-smtp"
+	s "net/smtp"
+
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -52,7 +53,8 @@ func TestSendMail(t *testing.T) {
 	recipients := []string{"bob@e.com"}
 	data := []byte("Test mail\r\n")
 
-	assert.Nil(t, smtp.SendMail(srv.Addr, nil, from, recipients, bytes.NewBuffer(data)))
+	// Send without TLS.
+	require.Nil(t, s.SendMail(srv.Addr, nil, from, recipients, data))
 
 	m, found := GetBackend(srv).Load(from, recipients)
 	assert.True(t, found)
