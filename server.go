@@ -10,7 +10,6 @@ package smtptester
 
 import (
 	"io"
-	"io/ioutil"
 	"sync"
 	"time"
 
@@ -107,7 +106,7 @@ func (s *Session) Mail(from string, opts *smtp.MailOptions) error {
 }
 
 // Rcpt implements the Rcpt interface.
-func (s *Session) Rcpt(to string) error {
+func (s *Session) Rcpt(to string, opts *smtp.RcptOptions) error {
 	s.mail.Recipients = append(s.mail.Recipients, to)
 
 	return nil
@@ -117,7 +116,7 @@ func (s *Session) Rcpt(to string) error {
 func (s *Session) Data(r io.Reader) error {
 	var err error
 
-	if s.mail.Data, err = ioutil.ReadAll(r); err != nil {
+	if s.mail.Data, err = io.ReadAll(r); err != nil {
 		return err
 	}
 
