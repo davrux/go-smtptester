@@ -8,7 +8,7 @@ import (
 )
 
 func TestMail_LookupKey(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		from       string
 		recipients []string
 		expected   string

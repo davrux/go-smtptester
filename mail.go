@@ -15,7 +15,8 @@ func (m *Mail) LookupKey() string {
 }
 
 // LookupKey returns a key of the format:
-//     m.From+m.Recipient_1+m.Recipient_2...
+//
+//	m.From+m.Recipient_1+m.Recipient_2...
 func LookupKey(f string, r []string) string {
 	return f + "+" + strings.Join(r, "+")
 }

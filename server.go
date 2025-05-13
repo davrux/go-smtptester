@@ -9,34 +9,36 @@
 package smtptester
 
 import (
+	"context"
+	"crypto/tls"
 	"io"
+	"log/slog"
 	"sync"
 	"time"
 
-	"github.com/emersion/go-smtp"
+	"github.com/uponusolutions/go-sasl"
+	"github.com/uponusolutions/go-smtp"
+	"github.com/uponusolutions/go-smtp/server"
 )
 
 // Standard returns a standard SMTP server listening on :2525
-func Standard() *smtp.Server {
-	srv := smtp.NewServer(NewBackend())
-
-	srv.Addr = ":2525"
-	srv.Domain = "127.0.0.1"
-	srv.ReadTimeout = 10 * time.Second
-	srv.WriteTimeout = 10 * time.Second
-	srv.MaxMessageBytes = 1024 * 1024
-	srv.MaxRecipients = 100
-	srv.AllowInsecureAuth = true
-
-	return srv
+func Standard() *server.Server {
+	return server.NewServer(
+		server.WithAddr(":2525"),
+		server.WithReadTimeout(10*time.Second),
+		server.WithWriteTimeout(10*time.Second),
+		server.WithMaxMessageBytes(1024*1024),
+		server.WithMaxRecipients(100),
+		server.WithBackend(NewBackend()),
+	)
 }
 
 ///////////////////////////////////////////////////////////////////////////
 // Backend
 ///////////////////////////////////////////////////////////////////////////
 
-// Backend is the backend for out test server. It contains a sync.Map
-// with all mails received.
+// Backend is the backend for out test server.
+// It contains a sync.Map with all mails received.
 type Backend struct {
 	Mails sync.Map
 }
@@ -47,17 +49,21 @@ func NewBackend() *Backend {
 }
 
 // NewSession returns a new Session.
-func (bkd *Backend) NewSession(_ *smtp.Conn) (smtp.Session, error) {
-	return newSession(bkd), nil
+func (b *Backend) NewSession(ctx context.Context, _ *server.Conn) (context.Context, server.Session, error) {
+	return ctx, newSession(b), nil
 }
 
 // GetBackend returns the concrete type *Backend from SMTP server.
-func GetBackend(s *smtp.Server) *Backend {
-	if s.Backend == nil {
+func GetBackend(s *server.Server) *Backend {
+	if s.Backend() == nil {
 		return nil
 	}
 
-	b, _ := s.Backend.(*Backend)
+	b, ok := s.Backend().(*Backend)
+	if !ok {
+		return nil
+	}
+
 	return b
 }
 
@@ -74,7 +80,7 @@ func (b *Backend) Load(from string, recipients []string) (*Mail, bool) {
 		return nil, ok
 	}
 
-	return i.(*Mail), ok
+	return i.(*Mail), ok //nolint
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -94,43 +100,61 @@ func newSession(b *Backend) *Session {
 	}
 }
 
-func (s *Session) AuthPlain(username, password string) error {
+// Reset implements Reset interface.
+func (s *Session) Reset(ctx context.Context, _ bool) (context.Context, error) {
+	s.mail = &Mail{}
+
+	return ctx, nil
+}
+
+// Close implements the Close interface.
+func (s *Session) Close(_ context.Context, _ error) {
+	s.mail = &Mail{}
+}
+
+// Logger implements the Logger interface.
+func (Session) Logger(_ context.Context) *slog.Logger {
 	return nil
 }
 
 // Mail implements the Mail interface.
-func (s *Session) Mail(from string, opts *smtp.MailOptions) error {
+func (s *Session) Mail(_ context.Context, from string, _ *smtp.MailOptions) error {
 	s.mail.From = from
 
 	return nil
 }
 
 // Rcpt implements the Rcpt interface.
-func (s *Session) Rcpt(to string, opts *smtp.RcptOptions) error {
+func (s *Session) Rcpt(_ context.Context, to string, _ *smtp.RcptOptions) error {
 	s.mail.Recipients = append(s.mail.Recipients, to)
 
 	return nil
 }
 
 // Data implements the Data interface.
-func (s *Session) Data(r io.Reader) error {
+func (s *Session) Data(_ context.Context, r func() io.Reader) (string, error) {
 	var err error
 
-	if s.mail.Data, err = io.ReadAll(r); err != nil {
-		return err
+	if s.mail.Data, err = io.ReadAll(r()); err != nil {
+		return "", err
 	}
 
 	s.backend.Add(s.mail)
 
+	return "", nil
+}
+
+// AuthMechanisms implements the AuthMechanisms interface.
+func (Session) AuthMechanisms(_ context.Context) []string {
 	return nil
 }
 
-// Reset implements Reset interface.
-func (s *Session) Reset() {
-	s.mail = &Mail{}
+// Auth implements the Auth interface.
+func (Session) Auth(_ context.Context, _ string) (sasl.Server, error) {
+	return nil, nil
 }
 
-// Logout implements Logout interface.
-func (s *Session) Logout() error {
-	return nil
+// STARTTLS implements the STARTTLS interface.
+func (Session) STARTTLS(_ context.Context, config *tls.Config) (*tls.Config, error) {
+	return config, nil
 }

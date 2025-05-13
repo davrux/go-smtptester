@@ -1,8 +1,10 @@
 package smtptester
 
 import (
-	"log"
+	"context"
+	"log/slog"
 	"os"
+	"os/signal"
 	"testing"
 	"time"
 
@@ -12,14 +14,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	srv = Standard()
-)
+var srv = Standard()
 
 func TestMain(m *testing.M) {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
 	go func() {
-		if err := srv.ListenAndServe(); err != nil {
-			log.Printf("smtp server response %s", err)
+		if err := srv.ListenAndServe(ctx); err != nil {
+			slog.Error("smtp server response %s", slog.Any("error", err))
 		}
 	}()
 
@@ -28,7 +31,9 @@ func TestMain(m *testing.M) {
 
 	exitVal := m.Run()
 
-	srv.Close()
+	if err := srv.Close(ctx); err != nil {
+		slog.Error("error closing server", slog.Any("error", err))
+	}
 
 	os.Exit(exitVal)
 }
@@ -54,7 +59,7 @@ func TestSendMail(t *testing.T) {
 	data := []byte("Test mail\r\n")
 
 	// Send without TLS.
-	require.Nil(t, s.SendMail(srv.Addr, nil, from, recipients, data))
+	require.Nil(t, s.SendMail(srv.Address(), nil, from, recipients, data))
 
 	m, found := GetBackend(srv).Load(from, recipients)
 	assert.True(t, found)
