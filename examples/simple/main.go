@@ -9,7 +9,7 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/davrux/go-smtptester"
+	"github.com/uponusolutions/go-smtptester"
 )
 
 func main() {

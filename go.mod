@@ -1,4 +1,4 @@
-module github.com/davrux/go-smtptester
+module github.com/uponusolutions/go-smtptester
 
 go 1.24.3
 
