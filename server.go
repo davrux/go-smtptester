@@ -33,6 +33,18 @@ func Standard() *server.Server {
 	)
 }
 
+// Standard with address returns a standard SMTP server listenting on addr.
+func StandardWithAddress(addr string) *server.Server {
+	return server.NewServer(
+		server.WithAddr(addr),
+		server.WithReadTimeout(10*time.Second),
+		server.WithWriteTimeout(10*time.Second),
+		server.WithMaxMessageBytes(1024*1024),
+		server.WithMaxRecipients(100),
+		server.WithBackend(NewBackend()),
+	)
+}
+
 ///////////////////////////////////////////////////////////////////////////
 // Backend
 ///////////////////////////////////////////////////////////////////////////
