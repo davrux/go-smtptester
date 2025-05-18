@@ -129,6 +129,11 @@ func (Session) Logger(_ context.Context) *slog.Logger {
 	return nil
 }
 
+// Verify implements the Verify interface.
+func (Session) Verify(_ context.Context, _ string) error {
+	return nil
+}
+
 // Mail implements the Mail interface.
 func (s *Session) Mail(_ context.Context, from string, _ *smtp.MailOptions) error {
 	s.mail.From = from
