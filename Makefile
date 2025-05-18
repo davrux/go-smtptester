@@ -10,16 +10,16 @@ race:
 
 cover:
 	go test ./... -race -coverprofile=coverage.out
-	go tool cover -html=coverage.out -o coverage.html
-	go tool cover -func=coverage.out
+	go tool -modfile=go.tool.mod cover -html=coverage.out -o coverage.html
+	go tool -modfile=go.tool.mod cover -func=coverage.out
 
 fumpt:
 	@echo "Fumpting go"
-	@go tool gofumpt -l -w .
+	@go tool -modfile=go.tool.mod gofumpt -l -w .
 
 lint: fumpt
 	@echo "Linting go"
-	@go tool golangci-lint run
+	@go tool -modfile=go.tool.mod golangci-lint run
 
 bench:
 	@go test -bench=.

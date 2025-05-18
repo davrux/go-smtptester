@@ -33,7 +33,7 @@ func Standard() *server.Server {
 	)
 }
 
-// Standard with address returns a standard SMTP server listenting on addr.
+// StandardWithAddress with address returns a standard SMTP server listenting on addr.
 func StandardWithAddress(addr string) *server.Server {
 	return server.NewServer(
 		server.WithAddr(addr),
