@@ -130,7 +130,7 @@ func (Session) Logger(_ context.Context) *slog.Logger {
 }
 
 // Verify implements the Verify interface.
-func (Session) Verify(_ context.Context, _ string) error {
+func (Session) Verify(_ context.Context, _ string, _ *smtp.VrfyOptions) error {
 	return nil
 }
 

@@ -5,7 +5,7 @@ go 1.24.3
 require (
 	github.com/stretchr/testify v1.10.0
 	github.com/uponusolutions/go-sasl v0.0.1
-	github.com/uponusolutions/go-smtp v0.0.15
+	github.com/uponusolutions/go-smtp v0.0.19
 )
 
 require (
